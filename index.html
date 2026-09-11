@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Antes del Clic — Verificador de enlaces y QR</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600;6..72,700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --paper:#EDEFF0;
+    --panel:#FFFFFF;
+    --ink:#1B2430;
+    --ink-soft:#5B6472;
+    --line:#CDD3D8;
+    --indigo:#2B3A67;
+    --indigo-soft:#EEF0F6;
+    --green:#2F7B5D;
+    --green-soft:#E7F2ED;
+    --amber:#9A6B00;
+    --amber-soft:#FBF1DD;
+    --red:#A0332F;
+    --red-soft:#F8E9E8;
+  }
+
+  *{ box-sizing:border-box; }
+
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .page{ max-width:640px; margin:0 auto; padding:28px 20px 48px; }
+
+  header{
+    display:flex; align-items:flex-start; gap:14px;
+    padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:28px;
+  }
+  .seal{ flex-shrink:0; margin-top:4px; }
+  h1{ font-family:"Newsreader", Georgia, serif; font-weight:600; font-size:1.7rem; margin:0 0 4px; letter-spacing:-0.01em; }
+  header p{ margin:0; color:var(--ink-soft); font-size:0.92rem; max-width:42ch; }
+
+  .panel{ background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:20px; }
+  .panel + .panel{ margin-top:20px; }
+
+  label{ display:block; font-size:0.88rem; color:var(--ink-soft); margin-bottom:8px; }
+
+  textarea{
+    width:100%; min-height:96px; resize:vertical; padding:12px;
+    border:1px solid var(--line); border-radius:4px;
+    font-family:"JetBrains Mono", ui-monospace, monospace; font-size:0.88rem;
+    color:var(--ink); background:#FBFBFC;
+  }
+  textarea:focus{ outline:2px solid var(--indigo); outline-offset:1px; }
+
+  .hint{ font-size:0.78rem; color:var(--ink-soft); margin-top:10px; }
+
+  .btn-row{ display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
+
+  button{ font-family:inherit; font-size:0.88rem; font-weight:600; border-radius:4px; padding:11px 18px; cursor:pointer; }
+  button:focus-visible{ outline:2px solid var(--indigo); outline-offset:2px; }
+
+  .btn-primary{ color:#fff; background:var(--indigo); border:none; }
+  .btn-primary:hover{ background:#22305A; }
+  .btn-primary:active{ transform:translateY(1px); }
+
+  .btn-secondary{ color:var(--indigo); background:transparent; border:1px solid var(--line); }
+  .btn-secondary:hover{ border-color:var(--indigo); }
+
+  .btn-small{ font-size:0.78rem; padding:6px 12px; }
+
+  .error-msg{ margin-top:12px; font-size:0.85rem; color:var(--red); }
+
+  .examples{ margin-top:16px; padding-top:14px; border-top:1px solid var(--line); }
+  .examples .field-label{ margin-bottom:8px; }
+
+  #results{
+    margin-top:20px; opacity:0; transform:translateY(6px);
+    transition:opacity .35s ease, transform .35s ease;
+  }
+  #results.show{ opacity:1; transform:translateY(0); }
+
+  .results-title{ font-family:"Newsreader", Georgia, serif; font-size:1.25rem; font-weight:600; margin:0 0 16px; }
+
+  #summarySection{ margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid var(--line); }
+  #summarySection .field-label{ margin-bottom:8px; }
+  .summary-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:9px 10px; border-bottom:1px solid var(--line); border-left:3px solid transparent;
+    cursor:pointer;
+  }
+  .summary-row:last-child{ border-bottom:none; }
+  .summary-row:hover{ background:#FAFAFB; }
+  .summary-row.active{ border-left-color:var(--indigo); background:var(--indigo-soft); }
+  .summary-host{
+    font-family:"JetBrains Mono", monospace; font-size:0.82rem;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+
+  .field-label{ font-size:0.78rem; color:var(--ink-soft); margin-bottom:6px; }
+
+  .destino-box{
+    border:1px solid var(--line); border-left:4px solid var(--ink); border-radius:4px;
+    padding:12px 14px; background:#FBFBFC; margin-bottom:14px; word-break:break-all;
+  }
+  .destino-box .url-text{ font-family:"JetBrains Mono", ui-monospace, monospace; font-size:0.92rem; }
+  .destino-box.alto{ border-left-color:var(--red); }
+  .destino-box.medio{ border-left-color:var(--amber); }
+  .destino-box.bajo{ border-left-color:var(--green); }
+
+  .mismatch-box{
+    border:1px solid var(--line); border-left:4px solid var(--red); border-radius:4px;
+    padding:12px 14px; background:var(--red-soft); margin-bottom:14px; font-size:0.88rem;
+  }
+  .mismatch-box .mm-row{ margin-bottom:4px; }
+  .mismatch-box .mm-row:last-child{ margin-bottom:0; }
+  .mismatch-box b{ font-family:"JetBrains Mono", monospace; font-weight:600; }
+
+  .score-row{ display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+
+  .badge{ display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:999px; font-weight:600; font-size:0.9rem; }
+  .badge.small{ padding:3px 10px; font-size:0.76rem; flex-shrink:0; }
+  .badge.alto{ background:var(--red-soft); color:var(--red); }
+  .badge.medio{ background:var(--amber-soft); color:var(--amber); }
+  .badge.bajo{ background:var(--green-soft); color:var(--green); }
+
+  .score-num{ font-family:"JetBrains Mono", monospace; color:var(--ink-soft); font-size:0.85rem; }
+
+  .legend{ display:flex; gap:14px; flex-wrap:wrap; font-size:0.76rem; color:var(--ink-soft); margin-bottom:10px; }
+  .legend span{ display:inline-flex; align-items:center; gap:5px; }
+  .dot{ width:8px; height:8px; border-radius:50%; display:inline-block; }
+  .dot.alta{ background:var(--red); }
+  .dot.media{ background:var(--amber); }
+  .dot.info{ background:var(--indigo); }
+
+  .findings{ list-style:none; margin:0 0 16px; padding:0; border-top:1px solid var(--line); }
+  .findings li{ padding:10px 0 10px 14px; border-bottom:1px solid var(--line); border-left:3px solid var(--ink-soft); font-size:0.9rem; margin-left:2px; }
+  .findings li.alta{ border-left-color:var(--red); }
+  .findings li.media{ border-left-color:var(--amber); }
+  .findings li.info{ border-left-color:var(--indigo); }
+  .findings .no-findings{ border-left-color:var(--green); color:var(--ink-soft); }
+
+  .recommendation{ border-radius:4px; padding:14px; margin-bottom:14px; font-size:0.92rem; }
+  .recommendation.alto{ background:var(--red-soft); color:var(--red); }
+  .recommendation.medio{ background:var(--amber-soft); color:var(--amber); }
+  .recommendation.bajo{ background:var(--green-soft); color:var(--green); }
+  .recommendation b{ display:block; margin-bottom:3px; }
+
+  details{ margin-top:20px; }
+  summary{ cursor:pointer; font-size:0.88rem; color:var(--indigo); font-weight:600; }
+  details p{ font-size:0.85rem; color:var(--ink-soft); margin:10px 0 0; }
+
+  footer{ margin-top:28px; padding-top:16px; border-top:1px solid var(--line); font-size:0.78rem; color:var(--ink-soft); }
+
+  @media (prefers-reduced-motion: reduce){ * { transition:none !important; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <svg class="seal" width="34" height="34" viewBox="0 0 34 34" fill="none">
+      <path d="M17 2 L30 7 V16 C30 24 24.5 29.5 17 32 C9.5 29.5 4 24 4 16 V7 Z" stroke="#2B3A67" stroke-width="1.6"/>
+      <path d="M11 17 L15.5 21.5 L23.5 12.5" stroke="#2B3A67" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div>
+      <h1>Antes del Clic</h1>
+      <p>Revela el destino real de uno o varios enlaces o un QR y detecta señales de phishing sin visitarlos.</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel">
+      <label for="input">Pega la URL, el enlace completo, el texto de un email, o escanea una foto del QR</label>
+      <textarea id="input" placeholder="Ej: https://dgt-es-multas.tk/pago  o  &lt;a href=&quot;...&quot;&gt;Pagar ahora&lt;/a&gt;"></textarea>
+      <p class="hint">El análisis se hace en tu navegador. Nada se envía a ningún servidor.</p>
+      <div class="btn-row">
+        <button id="analizarBtn" class="btn-primary" type="button">Analizar enlace</button>
+        <button id="pasteBtn" class="btn-secondary" type="button">Pegar del portapapeles</button>
+        <button id="qrBtn" class="btn-secondary" type="button">Escanear foto de QR</button>
+        <input type="file" id="qrInput" accept="image/*" capture="environment" hidden>
+      </div>
+      <div id="errorMsg" class="error-msg" hidden></div>
+
+      <div class="examples">
+        <div class="field-label">Probar con un ejemplo</div>
+        <div class="chip-row" id="exampleChips" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+      </div>
+    </section>
+
+    <section id="results" class="panel" hidden>
+      <h2 class="results-title">Informe</h2>
+
+      <div id="summarySection" hidden>
+        <div class="field-label">Se han analizado <span id="summaryCount"></span> enlaces — toca uno para ver su detalle</div>
+        <div id="summaryRows"></div>
+      </div>
+
+      <div class="field-label">Destino real detectado</div>
+      <div id="destinoBox" class="destino-box">
+        <span class="url-text" id="destinoText"></span>
+      </div>
+
+      <div id="mismatchBox" class="mismatch-box" hidden>
+        <div class="mm-row">Texto visible: <b id="mmVisible"></b></div>
+        <div class="mm-row">Destino real: <b id="mmReal"></b></div>
+        <div class="mm-row">El texto que se muestra no coincide con el dominio al que apunta realmente.</div>
+      </div>
+
+      <div class="score-row">
+        <span id="scoreBadge" class="badge"></span>
+        <span class="score-num" id="scoreNum"></span>
+      </div>
+
+      <div class="field-label">Motivos detectados</div>
+      <div class="legend">
+        <span><i class="dot alta"></i>Alta</span>
+        <span><i class="dot media"></i>Media</span>
+        <span><i class="dot info"></i>Informativa</span>
+      </div>
+      <ul id="findingsList" class="findings"></ul>
+
+      <div id="recommendation" class="recommendation"></div>
+      <button id="copyVerdictBtn" class="btn-secondary btn-small" type="button">Copiar veredicto</button>
+    </section>
+
+    <details>
+      <summary>¿Cómo se calcula esto?</summary>
+      <p>La herramienta compara el dominio contra una lista de marcas habituales en campañas de phishing en España (administración, bancos, mensajería, energía, aerolíneas y grandes plataformas); busca si ese dominio oficial aparece incrustado dentro de otro para simular confianza; calcula la distancia de edición entre el dominio y el nombre oficial para detectar imitaciones casi idénticas; decodifica los dominios en punycode para detectar homoglifos (letras de otros alfabetos que se ven casi iguales a las latinas); revisa trucos técnicos de URL (IP en vez de dominio, arrobas antes del dominio real, caracteres invisibles o de cambio de dirección de escritura, codificación porcentual doble); señala extensiones muy baratas, extensiones de país inusuales para servicios españoles, parámetros de redirección hacia otro dominio y exceso de guiones o subniveles; y compara el texto visible de un enlace con su destino real. Si pegas varios enlaces a la vez, los analiza todos y muestra primero el de mayor riesgo. Cada señal suma puntos a una puntuación orientativa. No sustituye tu criterio: ante la duda, no introduzcas datos y verifica por otro canal oficial.</p>
+    </details>
+  </main>
+
+  <footer>
+    Uso interno de apoyo. Ninguna URL ni imagen analizada sale de este navegador ni se consulta contra ninguna API externa.
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.js"></script>
+<script>
+(function(){
+  const brandMap = {
+    'dgt':'dgt.es','correos':'correos.es','correosexpress':'correosexpress.com','seur':'seur.com','mrw':'mrw.es','dhl':'dhl.com','fedex':'fedex.com','ups':'ups.com','inpost':'inpost.es',
+    'bbva':'bbva.es','santander':'bancosantander.es','caixabank':'caixabank.es','sabadell':'bancsabadell.com',
+    'bankinter':'bankinter.com','unicaja':'unicajabanco.com','kutxabank':'kutxabank.es','abanca':'abanca.com',
+    'cajamar':'cajamar.es','ibercaja':'ibercaja.es','evobanco':'evobanco.com','openbank':'openbank.es',
+    'hsbc':'hsbc.com','segsocial':'seg-social.es','segsoc':'seg-social.es','aeat':'agenciatributaria.gob.es','hacienda':'agenciatributaria.gob.es',
+    'amazon':'amazon.es','paypal':'paypal.com','netflix':'netflix.com','microsoft':'microsoft.com','disneyplus':'disneyplus.com','spotify':'spotify.com',
+    'apple':'apple.com','google':'google.com','meta':'meta.com','facebook':'facebook.com','linkedin':'linkedin.com','tiktok':'tiktok.com','docusign':'docusign.com','adobe':'adobe.com',
+    'whatsapp':'whatsapp.com','instagram':'instagram.com','endesa':'endesa.com','iberdrola':'iberdrola.com',
+    'naturgy':'naturgy.es','movistar':'movistar.es','vodafone':'vodafone.es','orange':'orange.es',
+    'renfe':'renfe.com','iberia':'iberia.com','glovo':'glovo.com','justeat':'just-eat.es',
+    'aliexpress':'aliexpress.com','mapfre':'mapfre.es','sanitas':'sanitas.es','adeslas':'adeslas.es',
+    'lineadirecta':'lineadirecta.com'
+  };
+
+  const suspiciousTlds = ['tk','ml','ga','cf','gq','xyz','top','club','work','support','click','link','fit','live','rest','icu','cam','cyou','monster','mom','quest','bar','cfd','sbs'];
+  const riskyCountryTlds = ['ru','su','cn','ir','kp','pw','cc','ws'];
+  const shorteners = ['bit.ly','tinyurl.com','goo.gl','t.co','ow.ly','is.gd','buff.ly','rebrand.ly','cutt.ly','shorturl.at','lnkd.in','rb.gy','tiny.cc','s.id','v.gd'];
+  const urgencyWords = ['login','verify','verificar','secure','seguro','actualizar','update','confirmar','confirm','bloqueo','bloqueada','suspendida','suspended','reactivar','multa','pago','factura','urgent','urgente','cuenta'];
+  const redirectParams = ['redirect','url','next','return','returnurl','dest','destination','continue','goto'];
+
+  const examples = [
+    { label:'Enlace legítimo', value:'https://www.correos.es/es/es/particulares' },
+    { label:'Palabra parecida, dominio normal', value:'https://www.booking.com/hotel/es/example.html' },
+    { label:'IP en vez de dominio', value:'http://192.168.10.5/bbva/acceso' },
+    { label:'Dominio incrustado', value:'https://correos.es.verifica-envio.top/entrega' },
+    { label:'Homoglifo (punycode)', value:'https://xn--pypal-4ve.com/login' }
+  ];
+
+  // --- Punycode (RFC 3492) decoder, solo para lectura/análisis, nunca para navegar ---
+  function punycodeDecodeLabel(input){
+    const base=36, tMin=1, tMax=26, skew=38, damp=700, initialBias=72, initialN=128;
+    let n=initialN, i=0, bias=initialBias;
+    const output=[];
+    let basic = input.lastIndexOf('-');
+    if(basic < 0) basic = 0;
+    for(let j=0;j<basic;j++) output.push(input.charCodeAt(j));
+    let index = basic > 0 ? basic+1 : 0;
+    const len = input.length;
+
+    function decodeDigit(cp){
+      if(cp-0x30<0x0a) return cp-0x16;
+      if(cp-0x41<0x1a) return cp-0x41;
+      if(cp-0x61<0x1a) return cp-0x61;
+      return base;
+    }
+    function adapt(delta, numPoints, firstTime){
+      delta = firstTime ? Math.floor(delta/damp) : delta>>1;
+      delta += Math.floor(delta/numPoints);
+      let k=0;
+      while(delta > ((base-tMin)*tMax)>>1){
+        delta = Math.floor(delta/(base-tMin));
+        k += base;
+      }
+      return k + Math.floor(((base-tMin+1)*delta)/(delta+skew));
+    }
+
+    try{
+      while(index < len){
+        const oldi = i;
+        let w = 1;
+        for(let k=base; ; k+=base){
+          if(index >= len) return null;
+          const digit = decodeDigit(input.charCodeAt(index++));
+          if(digit >= base) return null;
+          i += digit*w;
+          const t = k <= bias ? tMin : (k >= bias+tMax ? tMax : k-bias);
+          if(digit < t) break;
+          w *= (base-t);
+        }
+        const out = output.length+1;
+        bias = adapt(i-oldi, out, oldi===0);
+        n += Math.floor(i/out);
+        i %= out;
+        output.splice(i,0,n);
+        i++;
+      }
+      return String.fromCodePoint(...output);
+    }catch(e){ return null; }
+  }
+
+  function levenshtein(a,b){
+    const m=a.length, n=b.length;
+    if(m===0) return n;
+    if(n===0) return m;
+    const d = Array.from({length:m+1}, () => new Array(n+1).fill(0));
+    for(let i=0;i<=m;i++) d[i][0]=i;
+    for(let j=0;j<=n;j++) d[0][j]=j;
+    for(let i=1;i<=m;i++){
+      for(let j=1;j<=n;j++){
+        const cost = a[i-1]===b[j-1] ? 0 : 1;
+        d[i][j] = Math.min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1]+cost);
+      }
+    }
+    return d[m][n];
+  }
+
+  function hasSuspiciousScript(text){
+    const stripped = text.replace(/[ñáéíóúüàèìòùâêîôûçßäöëïÿœæ]/gi, '');
+    return /[^\x00-\x7F]/.test(stripped) && /[a-z]/i.test(text);
+  }
+
+  function hasInvisibleOrRtlChars(text){
+    return /[\u200B\u200C\u200D\u2060\uFEFF\u202A-\u202E\u2066-\u2069]/.test(text);
+  }
+
+  function hasDoubleEncoding(rawUrl){
+    return /%25[0-9a-f]{2}/i.test(rawUrl);
+  }
+
+  function findUrls(text){
+    const matches = text.match(/((https?:\/\/)|(www\.))[^\s"'<>]+/gi) || [];
+    return matches.map(u => u.toLowerCase().startsWith('www.') ? 'https://' + u : u);
+  }
+
+  function extractAllAnchors(text){
+    const regex = /<a\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+    const out = [];
+    let m;
+    while((m = regex.exec(text)) !== null){
+      out.push({ url: m[1], visible: m[2].replace(/<[^>]+>/g,'').trim() });
+    }
+    return out;
+  }
+
+  function checkBrandSignals(hostname, labels, decodedLabels, addFinding){
+    const variants = Array.from(new Set([...labels, ...decodedLabels]));
+    const handled = new Set();
+
+    for(const key in brandMap){
+      if(handled.has(key)) continue;
+      const official = brandMap[key];
+      const officialName = official.split('.')[0];
+      const matchesOfficial = hostname === official || hostname.endsWith('.' + official);
+      if(matchesOfficial) continue;
+
+      if(hostname.includes(official)){
+        addFinding('alta', 45, 'El dominio oficial ' + official + ' aparece incrustado dentro de otro dominio (' + hostname + '), una técnica para generar confianza visual falsa.');
+        handled.add(key); continue;
+      }
+
+      let labelHit = false;
+      for(const label of variants){
+        if(label === key || label.startsWith(key+'-') || label.endsWith('-'+key) ||
+           (label.startsWith(key) && /^\d+$/.test(label.slice(key.length)))){
+          labelHit = true;
+        }
+      }
+      if(labelHit){
+        addFinding('alta', 45, 'El dominio menciona «' + key + '» pero no coincide con su dominio oficial (' + official + ').');
+        handled.add(key); continue;
+      }
+
+      if(variants.includes(officialName)){
+        addFinding('media', 20, 'El nombre coincide con «' + officialName + '» pero la extensión de dominio no es la oficial (se esperaba …' + official + ').');
+        handled.add(key); continue;
+      }
+
+      for(const label of variants){
+        if(label.length < 4) continue;
+        const threshold = officialName.length <= 5 ? 1 : 2;
+        const d = levenshtein(label, officialName);
+        if(d > 0 && d <= threshold){
+          addFinding('alta', 40, 'El dominio «' + label + '» se parece mucho a «' + officialName + '» (oficial: ' + official + ') pero no es exactamente igual — posible imitación.');
+          handled.add(key); break;
+        }
+      }
+    }
+  }
+
+  function analyzeUrl(rawUrl, visibleText){
+    const findings = [];
+    const addFinding = (sev, weight, text) => findings.push({sev, weight, text});
+
+    let url;
+    try{ url = new URL(rawUrl); }
+    catch(e){
+      try{ url = new URL('https://' + rawUrl); }
+      catch(e2){ return null; }
+    }
+
+    const hostname = url.hostname.toLowerCase();
+    const labels = hostname.split('.');
+    const tld = labels[labels.length-1];
+
+    const decodedLabels = labels.map(l => {
+      if(l.startsWith('xn--')){
+        const decoded = punycodeDecodeLabel(l.slice(4));
+        return decoded ? decoded.toLowerCase() : l;
+      }
+      return l;
+    });
+    const decodedHost = decodedLabels.join('.');
+
+    if(/^(\d{1,3}\.){3}\d{1,3}$/.test(hostname)){
+      addFinding('alta', 45, 'La dirección usa una IP numérica en lugar de un nombre de dominio, algo que ningún servicio legítimo hace de cara al usuario.');
+    }
+
+    if(url.username || url.password){
+      addFinding('alta', 45, 'La URL contiene texto antes de una «@»: el navegador ignora todo lo anterior y va al dominio que viene después.');
+    }
+
+    if(hostname.includes('xn--')){
+      addFinding('alta', 35, 'El dominio usa codificación punycode, una técnica habitual para imitar visualmente marcas conocidas con caracteres casi idénticos.');
+      if(decodedHost !== hostname && hasSuspiciousScript(decodedHost)){
+        addFinding('alta', 20, 'El dominio decodificado («' + decodedHost + '») combina alfabetos distintos: imitación mediante caracteres visualmente idénticos (homoglifos).');
+      }
+    }
+
+    if(hasInvisibleOrRtlChars(rawUrl)){
+      addFinding('alta', 40, 'La dirección contiene caracteres Unicode invisibles o de cambio de dirección de escritura, una técnica para camuflar el texto real de la URL.');
+    }
+
+    if(hasDoubleEncoding(rawUrl)){
+      addFinding('media', 15, 'La URL contiene codificación porcentual doble (%25...), una técnica para ocultar otra dirección o carácter dentro del enlace.');
+    }
+
+    checkBrandSignals(hostname, labels, decodedLabels, addFinding);
+
+    if(suspiciousTlds.includes(tld)){
+      addFinding('media', 20, 'Usa la extensión «.' + tld + '», una de las más baratas y más utilizadas en campañas de phishing.');
+    }
+
+    if(riskyCountryTlds.includes(tld)){
+      addFinding('media', 12, 'Utiliza una extensión de dominio de país (.' + tld + ') poco habitual para servicios dirigidos a España o la UE.');
+    }
+
+    const isShortener = shorteners.some(s => hostname === s || hostname.endsWith('.' + s));
+    if(isShortener){
+      addFinding('info', 8, 'Es un acortador de enlaces (' + hostname + '); no se puede comprobar el destino final sin visitarlo.');
+    }
+
+    if(labels.length >= 4){
+      addFinding('media', 15, 'El dominio tiene varios subniveles (' + hostname + '), una forma de camuflar el dominio real en medio de la cadena.');
+    }
+
+    if(labels.some(l => (l.match(/-/g)||[]).length >= 2)){
+      addFinding('media', 12, 'El dominio usa varios guiones seguidos, un patrón habitual en dominios generados para phishing.');
+    }
+
+    const fullPath = (hostname + url.pathname + url.search).toLowerCase();
+    const foundWord = urgencyWords.find(w => fullPath.includes(w));
+    if(foundWord){
+      addFinding('media', 15, 'Contiene la palabra «' + foundWord + '», típica de mensajes que buscan presionar para actuar rápido.');
+    }
+
+    if(url.protocol !== 'https:'){
+      addFinding('media', 8, 'La conexión no está cifrada (no usa HTTPS).');
+    }
+
+    if(rawUrl.length > 90){
+      addFinding('media', 10, 'La URL es inusualmente larga, lo que puede usarse para ocultar el destino real u ofuscar parámetros.');
+    }
+
+    for(const [key, value] of url.searchParams.entries()){
+      if(redirectParams.includes(key.toLowerCase()) && /^https?:\/\//i.test(value)){
+        try{
+          const innerHost = new URL(value).hostname.toLowerCase();
+          if(innerHost && innerHost !== hostname){
+            addFinding('media', 20, 'El parámetro "' + key + '" redirige a otro dominio distinto (' + innerHost + '), una técnica para abusar de la confianza en ' + hostname + '.');
+          }
+        }catch(e){}
+      }
+    }
+
+    let mismatch = null;
+    if(visibleText){
+      if(hasInvisibleOrRtlChars(visibleText)){
+        addFinding('alta', 30, 'El texto mostrado contiene caracteres Unicode invisibles o de cambio de dirección de escritura, una técnica para camuflar el nombre real de un archivo o enlace.');
+      }
+      if(hasSuspiciousScript(visibleText)){
+        addFinding('media', 20, 'El texto mostrado combina caracteres de distintos alfabetos, una posible imitación visual de un dominio conocido.');
+      }
+      const looksLikeDomain = /(\.[a-z]{2,})/i.test(visibleText) || /^https?:\/\//i.test(visibleText) || /www\./i.test(visibleText);
+      if(looksLikeDomain){
+        const cleanedVisible = visibleText.toLowerCase().replace(/^https?:\/\//,'').replace(/^www\./,'').split('/')[0];
+        if(cleanedVisible && !hostname.includes(cleanedVisible) && !cleanedVisible.includes(hostname)){
+          addFinding('alta', 45, 'El texto visible del enlace no coincide con el dominio real al que apunta.');
+          mismatch = { visible: visibleText, real: hostname };
+        }
+      }
+    }
+
+    let score = findings.reduce((sum,f) => sum + f.weight, 0);
+    score = Math.min(score, 100);
+    let level = score >= 45 ? 'alto' : (score >= 18 ? 'medio' : 'bajo');
+
+    return { url, hostname, findings, score, level, mismatch };
+  }
+
+  function levelLabel(level){
+    return level==='alto' ? 'Riesgo alto' : level==='medio' ? 'Riesgo medio' : 'Riesgo bajo';
+  }
+
+  function recommendationFor(level){
+    if(level==='alto') return { title:'No introduzcas datos ni descargues nada.', body:'Varias señales apuntan a un intento de phishing. Verifica por otro canal oficial (llamando o desde la app) antes de continuar.' };
+    if(level==='medio') return { title:'Revisa el dominio con atención antes de continuar.', body:'Hay alguna señal de alerta, pero no es concluyente por sí sola. Comprueba que el dominio es exactamente el oficial.' };
+    return { title:'No se han detectado señales relevantes.', body:'Aun así, comprueba siempre que el dominio es el que esperas antes de introducir datos personales o de pago.' };
+  }
+
+  function showError(msg){
+    const errorMsg = document.getElementById('errorMsg');
+    errorMsg.textContent = msg;
+    errorMsg.hidden = false;
+  }
+  function clearError(){ document.getElementById('errorMsg').hidden = true; }
+
+  let currentResult = null;
+
+  function renderDetail(result){
+    currentResult = result;
+
+    const destinoBox = document.getElementById('destinoBox');
+    destinoBox.className = 'destino-box ' + result.level;
+    document.getElementById('destinoText').textContent = result.url.href;
+
+    const mismatchBox = document.getElementById('mismatchBox');
+    if(result.mismatch){
+      mismatchBox.hidden = false;
+      document.getElementById('mmVisible').textContent = result.mismatch.visible;
+      document.getElementById('mmReal').textContent = result.mismatch.real;
+    } else {
+      mismatchBox.hidden = true;
+    }
+
+    const badge = document.getElementById('scoreBadge');
+    badge.className = 'badge ' + result.level;
+    badge.textContent = levelLabel(result.level);
+    document.getElementById('scoreNum').textContent = result.score + ' / 100';
+
+    const list = document.getElementById('findingsList');
+    list.innerHTML = '';
+    if(result.findings.length === 0){
+      const li = document.createElement('li');
+      li.className = 'no-findings';
+      li.textContent = 'No se ha detectado ninguna señal de las que revisa esta herramienta.';
+      list.appendChild(li);
+    } else {
+      result.findings.forEach(f => {
+        const li = document.createElement('li');
+        li.className = f.sev;
+        li.textContent = f.text;
+        list.appendChild(li);
+      });
+    }
+
+    const rec = recommendationFor(result.level);
+    const recBox = document.getElementById('recommendation');
+    recBox.className = 'recommendation ' + result.level;
+    recBox.innerHTML = '<b>' + rec.title + '</b>' + rec.body;
+  }
+
+  function renderAll(results){
+    const resultsSection = document.getElementById('results');
+    resultsSection.hidden = false;
+    requestAnimationFrame(() => resultsSection.classList.add('show'));
+
+    const summarySection = document.getElementById('summarySection');
+    if(results.length > 1){
+      summarySection.hidden = false;
+      document.getElementById('summaryCount').textContent = results.length;
+      const rowsWrap = document.getElementById('summaryRows');
+      rowsWrap.innerHTML = '';
+      results.forEach((r, idx) => {
+        const row = document.createElement('div');
+        row.className = 'summary-row' + (idx===0 ? ' active' : '');
+        const hostSpan = document.createElement('span');
+        hostSpan.className = 'summary-host';
+        hostSpan.textContent = r.hostname;
+        const badgeSpan = document.createElement('span');
+        badgeSpan.className = 'badge small ' + r.level;
+        badgeSpan.textContent = levelLabel(r.level);
+        row.appendChild(hostSpan);
+        row.appendChild(badgeSpan);
+        row.addEventListener('click', () => {
+          rowsWrap.querySelectorAll('.summary-row').forEach(el => el.classList.remove('active'));
+          row.classList.add('active');
+          renderDetail(r);
+        });
+        rowsWrap.appendChild(row);
+      });
+    } else {
+      summarySection.hidden = true;
+    }
+
+    renderDetail(results[0]);
+    resultsSection.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  function runAnalysis(rawInput){
+    clearError();
+    const text = (rawInput || '').trim();
+    if(!text){ showError('Pega una URL o un enlace para analizar.'); return; }
+
+    const anchors = extractAllAnchors(text);
+    const bareUrls = findUrls(text);
+    const anchorUrlSet = new Set(anchors.map(a => a.url));
+
+    let entries = anchors.map(a => ({ url:a.url, visible:a.visible }));
+    bareUrls.forEach(u => { if(!anchorUrlSet.has(u)) entries.push({ url:u, visible:null }); });
+
+    if(entries.length === 0){
+      const firstToken = text.split(/\s/)[0];
+      if(/^[\w.-]+\.[a-z]{2,}([/?#].*)?$/i.test(firstToken)){
+        entries.push({ url:firstToken, visible:null });
+      }
+    }
+    if(entries.length === 0){ showError('No se ha reconocido ninguna URL en el texto pegado.'); return; }
+
+    const seen = new Set();
+    entries = entries.filter(e => { if(seen.has(e.url)) return false; seen.add(e.url); return true; });
+
+    if(entries.length === 1 && anchors.length === 0){
+      const remainder = text.replace(entries[0].url, '').trim();
+      if(remainder.length > 3) entries[0].visible = remainder;
+    }
+
+    const results = entries.map(e => analyzeUrl(e.url, e.visible)).filter(Boolean);
+    if(results.length === 0){ showError('No se ha podido interpretar ninguna de las URLs encontradas.'); return; }
+
+    results.sort((a,b) => b.score - a.score);
+    renderAll(results);
+  }
+
+  document.getElementById('analizarBtn').addEventListener('click', () => runAnalysis(document.getElementById('input').value));
+
+  document.getElementById('input').addEventListener('keydown', (e) => {
+    if(e.key === 'Enter' && (e.metaKey || e.ctrlKey)) runAnalysis(document.getElementById('input').value);
+  });
+
+  document.getElementById('pasteBtn').addEventListener('click', async () => {
+    clearError();
+    try{
+      const text = await navigator.clipboard.readText();
+      document.getElementById('input').value = text;
+    }catch(e){
+      showError('No se pudo leer el portapapeles automáticamente; pégalo con el teclado.');
+    }
+  });
+
+  document.getElementById('copyVerdictBtn').addEventListener('click', () => {
+    if(!currentResult) return;
+    const r = currentResult;
+    const icon = r.level === 'bajo' ? '✅' : '⚠️';
+    const verdict = icon + ' ' + levelLabel(r.level) + ' (' + r.score + '/100) — ' + r.hostname + '. ' + recommendationFor(r.level).title + ' (Analizado con Antes del Clic)';
+    navigator.clipboard.writeText(verdict).then(() => {
+      const btn = document.getElementById('copyVerdictBtn');
+      const original = btn.textContent;
+      btn.textContent = 'Copiado ✓';
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    }).catch(() => showError('No se pudo copiar automáticamente; selecciona el texto manualmente.'));
+  });
+
+  const chipsWrap = document.getElementById('exampleChips');
+  examples.forEach(ex => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'btn-secondary btn-small';
+    chip.textContent = ex.label;
+    chip.addEventListener('click', () => {
+      document.getElementById('input').value = ex.value;
+      runAnalysis(ex.value);
+    });
+    chipsWrap.appendChild(chip);
+  });
+
+  document.getElementById('qrBtn').addEventListener('click', () => document.getElementById('qrInput').click());
+
+  function enhanceContrast(imageData){
+    const d = imageData.data;
+    let min=255, max=0;
+    for(let i=0;i<d.length;i+=4){
+      const lum = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+      if(lum<min) min=lum;
+      if(lum>max) max=lum;
+    }
+    const range = Math.max(max-min, 1);
+    for(let i=0;i<d.length;i+=4){
+      const lum = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+      const v = Math.min(255, Math.max(0, ((lum-min)/range)*255));
+      d[i]=d[i+1]=d[i+2]=v;
+    }
+    return imageData;
+  }
+
+  document.getElementById('qrInput').addEventListener('change', (e) => {
+    clearError();
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        let code = (typeof jsQR === 'function') ? jsQR(imageData.data, imageData.width, imageData.height, {inversionAttempts:'attemptBoth'}) : null;
+        if(!code){
+          imageData = enhanceContrast(ctx.getImageData(0, 0, canvas.width, canvas.height));
+          code = (typeof jsQR === 'function') ? jsQR(imageData.data, imageData.width, imageData.height, {inversionAttempts:'attemptBoth'}) : null;
+        }
+        if(code && code.data){
+          document.getElementById('input').value = code.data;
+          runAnalysis(code.data);
+        } else {
+          showError('No se ha podido leer ningún código QR en esa imagen. Prueba con más luz o más cerca.');
+        }
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  });
+})();
+</script>
+</body>
+</html>
