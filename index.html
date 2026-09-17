@@ -230,7 +230,7 @@
 
     <details>
       <summary>¿Cómo se calcula esto?</summary>
-      <p>La herramienta compara el dominio contra una lista de marcas habituales en campañas de phishing en España (administración, bancos, mensajería, energía, aerolíneas y grandes plataformas); busca si ese dominio oficial aparece incrustado dentro de otro para simular confianza; calcula la distancia de edición entre el dominio y el nombre oficial para detectar imitaciones casi idénticas; decodifica los dominios en punycode para detectar homoglifos (letras de otros alfabetos que se ven casi iguales a las latinas); revisa trucos técnicos de URL (IP en vez de dominio, arrobas antes del dominio real, caracteres invisibles o de cambio de dirección de escritura, codificación porcentual doble); señala extensiones muy baratas, extensiones de país inusuales para servicios españoles, parámetros de redirección hacia otro dominio y exceso de guiones o subniveles; y compara el texto visible de un enlace con su destino real. Si pegas varios enlaces a la vez, los analiza todos y muestra primero el de mayor riesgo. Cada señal suma puntos a una puntuación orientativa. No sustituye tu criterio: ante la duda, no introduzcas datos y verifica por otro canal oficial.</p>
+      <p>La herramienta compara el dominio contra una lista de marcas habituales en campañas de phishing en España (administración, bancos, mensajería, energía, aerolíneas, telecos, viajes, criptomonedas y grandes plataformas); busca si ese dominio oficial aparece incrustado dentro de otro para simular confianza; calcula la distancia de edición entre el dominio y el nombre oficial para detectar imitaciones casi idénticas; decodifica los dominios en punycode para detectar homoglifos (letras de otros alfabetos que se ven casi iguales a las latinas); revisa trucos técnicos de URL (IP en vez de dominio, arrobas antes del dominio real, caracteres invisibles o de cambio de dirección de escritura, codificación porcentual doble, puertos no estándar); detecta protocolos que pueden ejecutar contenido sin dominio (<code>data:</code>, <code>javascript:</code>); señala enlaces que apuntan directamente a archivos ejecutables o con doble extensión disfrazada de documento; avisa cuando el dominio pertenece a una plataforma de publicación abierta (donde cualquiera puede alojar una página, como sitios de creación de webs, formularios o "artifacts" de IA) porque ahí el dominio es legítimo pero el contenido no está verificado; revisa los parámetros de la URL en busca de otra dirección oculta, tanto en texto plano como codificada en Base64; señala extensiones muy baratas, extensiones de país inusuales para servicios españoles y exceso de guiones o subniveles; compara el texto visible de un enlace con su destino real; y, si el código QR no es una URL web sino que llama a un teléfono, envía un SMS o configura una red WiFi, avisa de ello y señala los prefijos de tarificación especial españoles. Si pegas varios enlaces a la vez, los analiza todos y muestra primero el de mayor riesgo. Cada señal suma puntos a una puntuación orientativa. No sustituye tu criterio: ante la duda, no introduzcas datos y verifica por otro canal oficial.</p>
     </details>
   </main>
 
@@ -254,21 +254,36 @@
     'naturgy':'naturgy.es','movistar':'movistar.es','vodafone':'vodafone.es','orange':'orange.es',
     'renfe':'renfe.com','iberia':'iberia.com','glovo':'glovo.com','justeat':'just-eat.es',
     'aliexpress':'aliexpress.com','mapfre':'mapfre.es','sanitas':'sanitas.es','adeslas':'adeslas.es',
-    'lineadirecta':'lineadirecta.com'
+    'lineadirecta':'lineadirecta.com',
+    'sepe':'sepe.es','clave':'clave.gob.es','dgtes':'dgt.es','wallapop':'wallapop.com','booking':'booking.com',
+    'airbnb':'airbnb.com','ebay':'ebay.com','ryanair':'ryanair.com','vueling':'vueling.com','cabify':'cabify.com',
+    'uber':'uber.com','repsol':'repsol.com','ing':'ing.es','revolut':'revolut.com','n26':'n26.com','wise':'wise.com',
+    'binance':'binance.com','coinbase':'coinbase.com','shein':'shein.com','temu':'temu.com','zoom':'zoom.us',
+    'steam':'steampowered.com','playstation':'playstation.com','xbox':'xbox.com','ticketmaster':'ticketmaster.es',
+    'mediamarkt':'mediamarkt.es','elcorteingles':'elcorteingles.es','carrefour':'carrefour.es',
+    'twitter':'x.com','openai':'openai.com','chatgpt':'openai.com','claude':'claude.ai','anthropic':'anthropic.com',
+    'digi':'digimobil.es','yoigo':'yoigo.com','pepephone':'pepephone.com'
   };
 
-  const suspiciousTlds = ['tk','ml','ga','cf','gq','xyz','top','club','work','support','click','link','fit','live','rest','icu','cam','cyou','monster','mom','quest','bar','cfd','sbs'];
-  const riskyCountryTlds = ['ru','su','cn','ir','kp','pw','cc','ws'];
-  const shorteners = ['bit.ly','tinyurl.com','goo.gl','t.co','ow.ly','is.gd','buff.ly','rebrand.ly','cutt.ly','shorturl.at','lnkd.in','rb.gy','tiny.cc','s.id','v.gd'];
-  const urgencyWords = ['login','verify','verificar','secure','seguro','actualizar','update','confirmar','confirm','bloqueo','bloqueada','suspendida','suspended','reactivar','multa','pago','factura','urgent','urgente','cuenta'];
-  const redirectParams = ['redirect','url','next','return','returnurl','dest','destination','continue','goto'];
+  const suspiciousTlds = ['tk','ml','ga','cf','gq','xyz','top','club','work','support','click','link','fit','live','rest','icu','cam','cyou','monster','mom','quest','bar','cfd','sbs','bid','win','stream','download','loan','date','racing','review','accountant','faith','science','party','trade','webcam','gdn','men'];
+  const riskyCountryTlds = ['ru','su','cn','ir','kp','pw','cc','ws','by'];
+  const shorteners = ['bit.ly','tinyurl.com','goo.gl','t.co','ow.ly','is.gd','buff.ly','rebrand.ly','cutt.ly','shorturl.at','lnkd.in','rb.gy','tiny.cc','s.id','v.gd','share.google','g.co','amzn.to','youtu.be','fb.me','x.co','qr.ae','bit.do','soo.gd','shorturl.com','t.ly','cutt.us','mcaf.ee','clicky.me','shrtco.de','tiny.one','snip.ly'];
+  const urgencyWords = ['login','verify','verificar','secure','seguro','actualizar','update','confirmar','confirm','bloqueo','bloqueada','suspendida','suspended','reactivar','multa','pago','factura','urgent','urgente','cuenta','premio','ganador','regalo','gratis','sorteo','reembolso','devolucion','retenido','retenida','paquete','envio','codigo','otp','verificacion','alerta','importante','inmediato','accion','requerida','requerido','cancelar','suspension','caduca','vencimiento','deuda','embargo','denuncia','citacion','sancion'];
+  const redirectParams = ['redirect','url','next','return','returnurl','dest','destination','continue','goto','r','u','link','out','forward','target','continueurl','continue_url','forward_url','next_url'];
+  const dangerousProtocols = ['javascript:','data:','vbscript:','file:'];
+  const dangerousExtensions = ['exe','scr','bat','cmd','pif','msi','msp','jar','vbs','vbe','jse','wsf','wsh','ps1','psm1','apk','lnk','reg','hta','iso','img','dll'];
+  const userContentPlatforms = ['claude.ai','sites.google.com','docs.google.com','forms.gle','notion.site','canva.site','github.io','vercel.app','netlify.app','pages.dev','repl.co','replit.dev','glitch.me','codepen.io','jsfiddle.net','firebaseapp.com','web.app','herokuapp.com','wixsite.com','weebly.com','carrd.co','typeform.com','airtable.com','glide.page','softr.app','framer.website','webflow.io','myshopify.com'];
+  const premiumPhonePrefixes = ['803','806','807','905'];
 
   const examples = [
     { label:'Enlace legítimo', value:'https://www.correos.es/es/es/particulares' },
     { label:'Palabra parecida, dominio normal', value:'https://www.booking.com/hotel/es/example.html' },
     { label:'IP en vez de dominio', value:'http://192.168.10.5/bbva/acceso' },
     { label:'Dominio incrustado', value:'https://correos.es.verifica-envio.top/entrega' },
-    { label:'Homoglifo (punycode)', value:'https://xn--pypal-4ve.com/login' }
+    { label:'Homoglifo (punycode)', value:'https://xn--pypal-4ve.com/login' },
+    { label:'Plataforma de publicación abierta', value:'https://sites.google.com/view/entrega-paquete-pendiente' },
+    { label:'Archivo ejecutable disfrazado', value:'https://correos-envios.tk/factura-pendiente.pdf.exe' },
+    { label:'QR con SMS de tarificación especial', value:'sms:807517000' }
   ];
 
   // --- Punycode (RFC 3492) decoder, solo para lectura/análisis, nunca para navegar ---
@@ -423,9 +438,14 @@
       catch(e2){ return null; }
     }
 
+    if(dangerousProtocols.includes(url.protocol)){
+      addFinding('alta', 60, 'Usa el protocolo «' + url.protocol + '», que puede ejecutar código o mostrar una página completa sin pasar por ningún dominio verificable. Un enlace o QR normal nunca debería necesitar esto.');
+    }
+
     const hostname = url.hostname.toLowerCase();
     const labels = hostname.split('.');
     const tld = labels[labels.length-1];
+    const hostnameDisplay = hostname || ('(protocolo ' + url.protocol.replace(':','') + ', sin dominio)');
 
     const decodedLabels = labels.map(l => {
       if(l.startsWith('xn--')){
@@ -474,6 +494,29 @@
       addFinding('info', 8, 'Es un acortador de enlaces (' + hostname + '); no se puede comprobar el destino final sin visitarlo.');
     }
 
+    const isUserContentPlatform = userContentPlatforms.some(p => hostname === p || hostname.endsWith('.' + p));
+    if(isUserContentPlatform){
+      addFinding('media', 20, 'El dominio (' + hostname + ') pertenece a una plataforma donde cualquier persona puede publicar una página gratis. El proveedor es legítimo, pero eso no dice nada sobre el contenido de esta página en concreto: trátala como un adjunto sin verificar, especialmente si pide datos, contraseñas o un pago.');
+    }
+
+    const pathLower = url.pathname.toLowerCase();
+    const extMatch = pathLower.match(/\.([a-z0-9]{2,5})$/);
+    if(extMatch && dangerousExtensions.includes(extMatch[1])){
+      addFinding('alta', 35, 'El enlace apunta directamente a un archivo ejecutable o de script (.' + extMatch[1] + '). Nunca instales ni ejecutes un archivo así recibido por enlace, SMS, email o WhatsApp.');
+    }
+    const doubleExtMatch = pathLower.match(/\.(pdf|doc|docx|xls|xlsx|jpg|jpeg|png)\.(exe|scr|bat|jar|msi|hta|lnk|vbs|js)$/);
+    if(doubleExtMatch){
+      addFinding('alta', 40, 'El nombre del archivo imita un documento (.' + doubleExtMatch[1] + ') pero en realidad termina en «.' + doubleExtMatch[2] + '», una técnica clásica para camuflar archivos maliciosos como si fueran documentos normales.');
+    }
+
+    if(url.port && !['80','443',''].includes(url.port)){
+      addFinding('media', 10, 'La dirección usa un puerto no estándar (:' + url.port + '), algo inusual en un sitio web normal dirigido al público.');
+    }
+
+    if(!hostname.includes('xn--') && hasSuspiciousScript(hostname)){
+      addFinding('alta', 30, 'El nombre de dominio combina caracteres de distintos alfabetos, algo muy raro en un dominio legítimo.');
+    }
+
     if(labels.length >= 4){
       addFinding('media', 15, 'El dominio tiene varios subniveles (' + hostname + '), una forma de camuflar el dominio real en medio de la cadena.');
     }
@@ -496,12 +539,37 @@
       addFinding('media', 10, 'La URL es inusualmente larga, lo que puede usarse para ocultar el destino real u ofuscar parámetros.');
     }
 
+    function tryDecodeBase64Url(value){
+      if(!/^[A-Za-z0-9+/_-]{16,}={0,2}$/.test(value)) return null;
+      try{
+        const normalized = value.replace(/-/g,'+').replace(/_/g,'/');
+        const decoded = atob(normalized);
+        if(/^https?:\/\//i.test(decoded)) return decoded;
+      }catch(e){}
+      return null;
+    }
+
     for(const [key, value] of url.searchParams.entries()){
-      if(redirectParams.includes(key.toLowerCase()) && /^https?:\/\//i.test(value)){
+      const isKnownRedirectParam = redirectParams.includes(key.toLowerCase());
+      if(/^https?:\/\//i.test(value)){
         try{
           const innerHost = new URL(value).hostname.toLowerCase();
           if(innerHost && innerHost !== hostname){
-            addFinding('media', 20, 'El parámetro "' + key + '" redirige a otro dominio distinto (' + innerHost + '), una técnica para abusar de la confianza en ' + hostname + '.');
+            if(isKnownRedirectParam){
+              addFinding('media', 20, 'El parámetro "' + key + '" redirige a otro dominio distinto (' + innerHost + '), una técnica para abusar de la confianza en ' + hostname + '.');
+            } else {
+              addFinding('info', 8, 'El parámetro "' + key + '" incluye una URL completa hacia otro dominio (' + innerHost + '); comprueba que ese destino también es de confianza.');
+            }
+          }
+        }catch(e){}
+        continue;
+      }
+      const decodedUrl = tryDecodeBase64Url(value);
+      if(decodedUrl){
+        try{
+          const innerHost = new URL(decodedUrl).hostname.toLowerCase();
+          if(innerHost && innerHost !== hostname){
+            addFinding('media', 20, 'El parámetro "' + key + '" contiene una URL codificada en Base64 que oculta un destino hacia otro dominio (' + innerHost + ').');
           }
         }catch(e){}
       }
@@ -529,7 +597,34 @@
     score = Math.min(score, 100);
     let level = score >= 45 ? 'alto' : (score >= 18 ? 'medio' : 'bajo');
 
-    return { url, hostname, findings, score, level, mismatch };
+    return { url, hostname: hostnameDisplay, findings, score, level, mismatch };
+  }
+
+  function buildNonUrlResult(text, schemeRaw){
+    const scheme = schemeRaw.toLowerCase();
+    const findings = [];
+    const addFinding = (sev, weight, txt) => findings.push({sev, weight, text: txt});
+
+    if(scheme === 'tel:' || scheme === 'sms:' || scheme === 'smsto:'){
+      const numberMatch = text.match(/[+\d][\d\s-]{4,}/);
+      const number = numberMatch ? numberMatch[0].replace(/[\s-]/g,'') : '(no identificado)';
+      const digits = number.replace(/^\+?34/, '');
+      const isPremium = premiumPhonePrefixes.some(p => digits.startsWith(p));
+      if(scheme === 'tel:'){
+        addFinding(isPremium ? 'alta' : 'media', isPremium ? 45 : 20, 'Este código no es un enlace web: hace una llamada automática al número «' + number + '»' + (isPremium ? ', que empieza por un prefijo de tarificación especial en España.' : '.') + ' No lo escanees si no confías totalmente en el origen del cartel, factura o mensaje.');
+      } else {
+        addFinding(isPremium ? 'alta' : 'media', isPremium ? 45 : 20, 'Este código no es un enlace web: prepara un SMS al número «' + number + '»' + (isPremium ? ', que empieza por un prefijo de tarificación especial en España — los SMS a estos números pueden cobrarse a precio elevado.' : '.') + ' Revisa bien antes de enviarlo.');
+      }
+    } else if(scheme === 'mailto:'){
+      const emailMatch = text.match(/[\w.+-]+@[\w-]+\.[\w.-]+/);
+      addFinding('info', 8, 'Este código no es un enlace web, sino que abre tu app de correo para escribir a «' + (emailMatch ? emailMatch[0] : text.replace(/^mailto:/i,'')) + '». Comprueba que es la dirección que esperas antes de enviar información.');
+    } else if(scheme === 'wifi:'){
+      addFinding('media', 15, 'Este código configura tu dispositivo para conectarse automáticamente a una red WiFi. No lo uses si procede de un lugar público desconocido: la red podría estar controlada por quien puso el cartel, y podría interceptar tu tráfico.');
+    }
+
+    const score = Math.min(findings.reduce((sum,f) => sum + f.weight, 0), 100);
+    const level = score >= 45 ? 'alto' : (score >= 18 ? 'medio' : 'bajo');
+    return { url: { href: text }, hostname: '(no es una URL web — ' + scheme + ')', findings, score, level, mismatch: null };
   }
 
   function levelLabel(level){
@@ -649,7 +744,15 @@
         entries.push({ url:firstToken, visible:null });
       }
     }
-    if(entries.length === 0){ showError('No se ha reconocido ninguna URL en el texto pegado.'); return; }
+    if(entries.length === 0){
+      const schemeMatch = text.match(/^(tel:|sms:|smsto:|mailto:|wifi:)/i);
+      if(schemeMatch){
+        renderAll([buildNonUrlResult(text, schemeMatch[1])]);
+        return;
+      }
+      showError('No se ha reconocido ninguna URL en el texto pegado.');
+      return;
+    }
 
     const seen = new Set();
     entries = entries.filter(e => { if(seen.has(e.url)) return false; seen.add(e.url); return true; });
