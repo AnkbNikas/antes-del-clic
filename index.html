@@ -150,6 +150,9 @@
   .recommendation.bajo{ background:var(--green-soft); color:var(--green); }
   .recommendation b{ display:block; margin-bottom:3px; }
 
+  .scope-note{ font-size:0.82rem; color:var(--ink-soft); background:#F4F4F6; border:1px solid var(--line); border-radius:4px; padding:11px 13px; margin-bottom:14px; }
+  .scope-note b{ color:var(--ink); }
+
   details{ margin-top:20px; }
   summary{ cursor:pointer; font-size:0.88rem; color:var(--indigo); font-weight:600; }
   details p{ font-size:0.85rem; color:var(--ink-soft); margin:10px 0 0; }
@@ -225,6 +228,9 @@
       <ul id="findingsList" class="findings"></ul>
 
       <div id="recommendation" class="recommendation"></div>
+      <div class="scope-note">
+        <b>Esto solo analiza la dirección del enlace.</b> No comprueba quién te lo envía, si la empresa o persona detrás existe realmente, ni qué contiene de verdad la página, el PDF o el archivo al que apunta. Un "riesgo bajo" o "medio" no es un certificado de confianza — solo significa que el texto del enlace en sí no tiene las señales técnicas que esta herramienta sabe buscar. Verifica siempre la identidad por un canal aparte (registro mercantil, teléfono oficial, etc.) antes de confiar en algo importante.
+      </div>
       <button id="copyVerdictBtn" class="btn-secondary btn-small" type="button">Copiar veredicto</button>
     </section>
 
@@ -382,6 +388,18 @@
     return out;
   }
 
+  function checkBrandInPath(hostname, url, addFinding){
+    const pathAndQuery = (url.pathname + ' ' + url.search).toLowerCase();
+    const segments = pathAndQuery.split(/[^a-z0-9]+/).filter(s => s.length >= 4);
+    for(const key in brandMap){
+      const official = brandMap[key];
+      if(hostname === official || hostname.endsWith('.' + official) || hostname.includes(official)) continue;
+      if(segments.includes(key)){
+        addFinding('media', 20, 'La ruta del enlace menciona «' + key + '» aunque el dominio (' + hostname + ') no es el oficial (' + official + ') — una forma habitual de simular una página de esa marca en un dominio genérico.');
+      }
+    }
+  }
+
   function checkBrandSignals(hostname, labels, decodedLabels, addFinding){
     const variants = Array.from(new Set([...labels, ...decodedLabels]));
     const handled = new Set();
@@ -414,6 +432,16 @@
         addFinding('media', 20, 'El nombre coincide con «' + officialName + '» pero la extensión de dominio no es la oficial (se esperaba …' + official + ').');
         handled.add(key); continue;
       }
+
+      const normalizeConfusables = s => s.replace(/rn/g,'m').replace(/vv/g,'w').replace(/cl/g,'d').replace(/ii/g,'u');
+      for(const label of variants){
+        const normalized = normalizeConfusables(label);
+        if(normalized !== label && normalized === officialName){
+          addFinding('alta', 45, 'El dominio «' + label + '» usa una combinación de letras (como «rn» en vez de «m», o «vv» en vez de «w») para imitar visualmente a «' + officialName + '» (oficial: ' + official + ').');
+          handled.add(key); break;
+        }
+      }
+      if(handled.has(key)) continue;
 
       for(const label of variants){
         if(label.length < 4) continue;
@@ -480,6 +508,7 @@
     }
 
     checkBrandSignals(hostname, labels, decodedLabels, addFinding);
+    checkBrandInPath(hostname, url, addFinding);
 
     if(suspiciousTlds.includes(tld)){
       addFinding('media', 20, 'Usa la extensión «.' + tld + '», una de las más baratas y más utilizadas en campañas de phishing.');
